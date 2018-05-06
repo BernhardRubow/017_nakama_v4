@@ -11,14 +11,17 @@ public class nvp_NetworkManager_scr : MonoBehaviour
 
   // +++ fields +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   [SerializeField] private nvp_NakamaManager_scr _nakama;
+  [SerializeField] private int maxNumberOfPlayers;
+  [SerializeField] private int minNumberOfPlayers;
 
   // +++ values received from nakama server
   private INSession _nakamaSession;
   private INMatch _nakamaMatch;
   private string _nakamaMatchId;
+  private Queue<IEnumerator> _nakamaEventQueue = new Queue<IEnumerator>();
   private List<INUserPresence> _nakamaMatchPresences = new List<INUserPresence>();
   private INUserPresence _self;
-
+  private INClient _client;
 
   // +++ internal flags for that can trigger state transitions
   private bool _connected = false;
@@ -40,10 +43,11 @@ public class nvp_NetworkManager_scr : MonoBehaviour
     _nakama.OnMatchCreated += OnMatchCreated;
     _nakama.OnMatchJoined += OnMatchJoined;
     _nakama.OnMatchPresencesUpdated += OnMatchPresencesUpdated;
-    
 
-    // Login or Register to Nakama Multiplayer Server;
-    _nakama.LoginOrRegister("random_guid", null);
+    // Login or Register to Nakama Multiplayer Server and retrieve the client;
+    _client = _nakama.LoginOrRegister("random_guid", null);
+
+    _client.OnMatchData += OnMatchData;
   }
 
   void Start()
@@ -59,6 +63,12 @@ public class nvp_NetworkManager_scr : MonoBehaviour
   void Update()
   {
     _stateUpdate();
+
+    lock (_nakamaEventQueue) {
+      for (int i = 0, len = _nakamaEventQueue.Count; i < len; i++) {
+        StartCoroutine(_nakamaEventQueue.Dequeue());
+      }
+    }
   }
 
 
@@ -76,33 +86,64 @@ public class nvp_NetworkManager_scr : MonoBehaviour
 
   private void OnMatchCreated(INMatch match)
   {
-    if(match != null) {
-    _nakamaMatch = match;
+    if (match != null)
+    {
+      _nakamaMatch = match;
       _matchCreated = true;
     }
   }
 
   private void OnMatchJoined(INResultSet<INMatch> matches)
   {
-    if(matches != null) {
+    if (matches != null)
+    {
       _matchJoined = true;
       _self = matches.Results[0].Self;
       _nakamaMatchPresences.AddRange(matches.Results[0].Presence);
-      _nakamaMatchPresences.Remove(_nakamaMatchPresences.Single(x=>x.Handle == _self.Handle));
+      _nakamaMatchPresences.Remove(_nakamaMatchPresences.Single(x => x.Handle == _self.Handle));
     }
-  }  
+  }
 
   private void OnMatchPresencesUpdated(INMatchPresence presences)
   {
     _matchPresencesUpdated = true;
-    foreach(var user in presences.Leave)
+    foreach (var user in presences.Leave)
     {
-      _nakamaMatchPresences.Remove(_nakamaMatchPresences.Single(x=>x.Handle == user.Handle));
+      _nakamaMatchPresences.Remove(_nakamaMatchPresences.Single(x => x.Handle == user.Handle));
     }
 
-    foreach(var user in presences.Join)
+    foreach (var user in presences.Join)
     {
-       _nakamaMatchPresences.Add(user);
+      _nakamaMatchPresences.Add(user);
+
+      var playerCount = _nakamaMatchPresences.Count();
+      if (playerCount >= minNumberOfPlayers && playerCount <= maxNumberOfPlayers)
+      {
+        Debug.Log("Game is ready");
+        Enqueue(
+          () => nvp_EventManager_scr.INSTANCE.InvokeEvent(GameEvents.OnMatchIsReady, this, _nakamaMatchPresences)
+        );
+      }
+      else
+      {
+        var matchIsFullMessage = NMatchDataSendMessage.Default(
+          _nakamaMatchId,
+          99L,
+          System.Text.Encoding.UTF8.GetBytes(user.Handle));
+        _nakama.SendDataMessage(matchIsFullMessage);
+      }
+    }
+  }
+
+  private void OnMatchData(INMatchData msg)
+  {
+    switch (msg.OpCode)
+    {
+      case 99L:
+        // game is full so disconnect
+        string userHandle = System.Text.Encoding.UTF8.GetString(msg.Data);
+        if (userHandle == _self.Handle) _client.Disconnect();
+        break;
     }
   }
 
@@ -110,11 +151,13 @@ public class nvp_NetworkManager_scr : MonoBehaviour
 
 
   // +++ other game event handler +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  void OnCreateGameInitiated(object sender, object eventArgs){
+  void OnCreateGameInitiated(object sender, object eventArgs)
+  {
     _stateUpdate = State_CreateMatch_Update;
   }
 
-  void OnJoinGameInitiated(object sender , object eventArgs){
+  void OnJoinGameInitiated(object sender, object eventArgs)
+  {
     _nakamaMatchId = eventArgs.ToString();
     _stateUpdate = State_JoinMatch_Update;
   }
@@ -130,7 +173,7 @@ public class nvp_NetworkManager_scr : MonoBehaviour
       Debug.LogFormat("Connected to server. Session token: {0}", _nakamaSession.Token);
 
       // do nothing
-      _stateUpdate = () => {};
+      _stateUpdate = () => { };
     }
   }
 
@@ -145,7 +188,7 @@ public class nvp_NetworkManager_scr : MonoBehaviour
   {
     if (_matchCreated)
     {
-			Debug.LogFormat("Matcht created. MatchId: {0}", _nakamaMatch.Id);
+      Debug.LogFormat("Matcht created. MatchId: {0}", _nakamaMatch.Id);
       nvp_EventManager_scr.INSTANCE.InvokeEvent(GameEvents.OnMatchIdAccuired, this, _nakamaMatch.Id);
       _stateUpdate = State_WaitingForPlayers_Update;
     }
@@ -154,28 +197,49 @@ public class nvp_NetworkManager_scr : MonoBehaviour
 
 
   // +++ states that handle the joining of an existiong match
-  void State_JoinMatch_Update(){
+  void State_JoinMatch_Update()
+  {
     _nakama.JoinMatch(_nakamaMatchId);
     _stateUpdate = State_WaitingForJoin_Update;
   }
 
-  void State_WaitingForJoin_Update(){
-    if(_matchJoined){
+  void State_WaitingForJoin_Update()
+  {
+    if (_matchJoined)
+    {
       Debug.LogFormat("Joined match with Id: {0}", _nakamaMatchId);
       nvp_EventManager_scr.INSTANCE.InvokeEvent(GameEvents.OnMatchPresencesUpdated, this, _nakamaMatchPresences);
       _stateUpdate = State_WaitingForPlayers_Update;
-    }    
+    }
   }
 
-  void State_WaitingForPlayers_OnEnter(){
+  void State_WaitingForPlayers_OnEnter()
+  {
     _stateUpdate = State_WaitingForPlayers_Update;
   }
 
   void State_WaitingForPlayers_Update()
   {
-    if(_matchPresencesUpdated == true){
+    if (_matchPresencesUpdated == true)
+    {
       nvp_EventManager_scr.INSTANCE.InvokeEvent(GameEvents.OnMatchPresencesUpdated, this, _nakamaMatchPresences);
       _matchPresencesUpdated = false;
     }
+  }
+
+  // +++ helper for bringing events to the main thread
+  private void Enqueue(Action action) {
+    lock (_nakamaEventQueue) {
+      _nakamaEventQueue.Enqueue(ActionWrapper(action));
+      if (_nakamaEventQueue.Count > 1024) {
+        Debug.LogWarning("Queued actions not consumed fast enough.");
+        _client.Disconnect();
+      }
+    }
+  }
+
+  private IEnumerator ActionWrapper(Action action) {
+    action();
+    yield return null;
   }
 }

@@ -11,7 +11,8 @@ namespace newvisionsproject.managers.events
     OnCreateGameInitiated,
     OnJoinGameInitiated,
     OnInitPlayerListReceived,
-    OnMatchPresencesUpdated
+    OnMatchPresencesUpdated,
+    OnMatchIsReady
   }
 
   public class nvp_EventManager_scr : MonoBehaviour

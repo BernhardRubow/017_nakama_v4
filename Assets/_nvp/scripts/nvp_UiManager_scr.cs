@@ -9,10 +9,12 @@ using Nakama;
 public class nvp_UiManager_scr : MonoBehaviour {
 
 	// +++ fields +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	[Header("SPECIAL UI ELEMENTS")]
 	[SerializeField] private InputField _matchId;	
 	[SerializeField] private InputField _matchIdToJoin_01;
 	[SerializeField] private InputField _matchIdToJoin_02;
 	[SerializeField] private Text _playerLog;
+	[SerializeField] private Button _startGameButton;
 
 	[Header("UI FOR DIFFERENT STATES")]
 	[SerializeField] private GameObject _startGameUI;
@@ -26,6 +28,7 @@ public class nvp_UiManager_scr : MonoBehaviour {
 		// register events
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchIdAccuired, OnMatchIdAccuired);
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchPresencesUpdated, OnMatchPresencesUpdated);
+		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchIsReady, OnMatchIsReady);
 
 		// reset ui
 		_startGameUI.SetActive(true);
@@ -76,5 +79,9 @@ public class nvp_UiManager_scr : MonoBehaviour {
 		{	
 			_playerLog.text += string.Format("Player with handle {0}.\n", user.Handle);
 		}
+	}
+
+	private void OnMatchIsReady(object sender, object eventArgs){
+		_startGameButton.gameObject.SetActive(true);
 	}
 }

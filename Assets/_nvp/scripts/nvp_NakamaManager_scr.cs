@@ -12,12 +12,13 @@ public class nvp_NakamaManager_scr : MonoBehaviour
   public delegate void OnCreateMatchDelegate(INMatch match);
   public delegate void OnJoinMatchDelegate(INResultSet<INMatch> matches);
   public delegate void OnMatchPresencesDelegate(INMatchPresence presences);
+  public delegate void OnMatchDataMessageSentDelegate(bool done);
 
 
 
   // +++ fields +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   public nvp_NakamaServerSetting_sco serverSettings;
-  public INClient _client;
+  private INClient _client;
 
 
 
@@ -27,12 +28,13 @@ public class nvp_NakamaManager_scr : MonoBehaviour
   public event OnCreateMatchDelegate OnMatchCreated;
   public event OnJoinMatchDelegate OnMatchJoined;
   public event OnMatchPresencesDelegate OnMatchPresencesUpdated;
+  public event OnMatchDataMessageSentDelegate OnMatchDataMessageSent; 
 
 
 
 
   // +++ functions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  public void LoginOrRegister(string loginType, object userData)
+  public INClient LoginOrRegister(string loginType, object userData)
   {
     _client = new NClient
         .Builder(serverSettings.serverKey)
@@ -62,6 +64,8 @@ public class nvp_NakamaManager_scr : MonoBehaviour
         if (OnConnected != null) OnConnected(null);
       }
     );
+
+    return _client;
   }
 
 
@@ -98,6 +102,25 @@ public class nvp_NakamaManager_scr : MonoBehaviour
       (INError Error) => { 
         if (OnMatchJoined != null) OnMatchJoined(null); 
       }
+    );
+  }
+
+  internal void SendDataMessage(NMatchDataSendMessage msg)
+  {
+    _client.Send(
+      msg, 
+      (bool done) => { if(OnMatchDataMessageSent != null) OnMatchDataMessageSent(done);},
+      (INError Error) => { if(OnMatchDataMessageSent !=null) OnMatchDataMessageSent(false); }
+    );
+  }
+
+  internal void LogOut(string matchId)
+  {
+    var logOutMessage = NMatchLeaveMessage.Default(matchId);
+    _client.Send(
+      logOutMessage, 
+      (bool complete) => Debug.Log("LoggedOut"),
+      (INError error) => Debug.Log("Error logging out")
     );
   }
 }

@@ -435,6 +435,7 @@ MonoBehaviour:
   _matchIdToJoin_01: {fileID: 449019976}
   _matchIdToJoin_02: {fileID: 1787716696}
   _playerLog: {fileID: 746292572}
+  _startGameButton: {fileID: 1780061961}
   _startGameUI: {fileID: 1917988009}
   _createNetworkGameUI: {fileID: 640238912}
   _joinNetworkGameUI: {fileID: 673709007}
@@ -1320,6 +1321,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _nakama: {fileID: 772783794}
+  maxNumberOfPlayers: 2
+  minNumberOfPlayers: 4
 --- !u!4 &772783796
 Transform:
   m_ObjectHideFlags: 0
@@ -2326,7 +2329,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1780061960
 RectTransform:
   m_ObjectHideFlags: 0
