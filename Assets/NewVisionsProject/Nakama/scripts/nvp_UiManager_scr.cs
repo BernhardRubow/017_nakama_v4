@@ -29,7 +29,6 @@ public class nvp_UiManager_scr : MonoBehaviour {
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchIdAccuired, OnMatchIdAccuired);
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchPresencesUpdated, OnMatchPresencesUpdated);
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchIsReady, OnMatchIsReady);
-		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMultiplayerGameStarted, OnStartMultiPlayerGame);
 
 		// reset ui
 		_startGameUI.SetActive(true);
@@ -88,16 +87,12 @@ public class nvp_UiManager_scr : MonoBehaviour {
 
 	public void OnStartMultiPlayerGame(){
 		nvp_EventManager_scr.INSTANCE.InvokeEvent(GameEvents.OnMultiplayerGameStarted, this, null);
-	}
 
-  private void OnStartMultiPlayerGame(object arg1, object arg2)
-  {
-    // unsubscribe from events
+		// unsubscribe from events
 		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMatchIdAccuired, OnMatchIdAccuired);
 		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMatchPresencesUpdated, OnMatchPresencesUpdated);
 		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMatchIsReady, OnMatchIsReady);
-		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMultiplayerGameStarted, OnStartMultiPlayerGame);
 
 		Destroy(this.gameObject);
-  }
+	}
 }

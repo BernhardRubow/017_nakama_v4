@@ -9,9 +9,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8bc68d017b1b94d4ebcc372c714417de, type: 3}
-  m_Name: aws-mkwindweb2-de
+  m_Name: serverSettings
   m_EditorClassIdentifier: 
   serverKey: defaultkey
-  hostName: aws.mkwindweb2.de
+  hostName: your.server.domain
   port: 7350
   ssl: 0
