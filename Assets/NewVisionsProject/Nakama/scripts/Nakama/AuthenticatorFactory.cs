@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Nakama;
 
-namespace Nakama {
+namespace newvisionsproject.nakama {
 
 	public class AuthenticatorFactory{
 

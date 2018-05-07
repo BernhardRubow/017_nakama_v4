@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace Nakama
+using Nakama;
+
+namespace newvisionsproject.nakama
 {
   public interface ICustomAuthenticator 
   {   

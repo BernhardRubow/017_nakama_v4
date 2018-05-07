@@ -25,10 +25,11 @@ public class nvp_UiManager_scr : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		// register events
+		// subscribe from events
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchIdAccuired, OnMatchIdAccuired);
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchPresencesUpdated, OnMatchPresencesUpdated);
 		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMatchIsReady, OnMatchIsReady);
+		nvp_EventManager_scr.INSTANCE.SubscribeToEvent(GameEvents.OnMultiplayerGameStarted, OnStartMultiPlayerGame);
 
 		// reset ui
 		_startGameUI.SetActive(true);
@@ -38,10 +39,10 @@ public class nvp_UiManager_scr : MonoBehaviour {
 
 	}
 
-	
 
 
-	// +++ event handler ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  // +++ event handler ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   private void OnMatchIdAccuired(object sender, object eventArgs)
   {
     _matchId.text = eventArgs.ToString();
@@ -84,4 +85,19 @@ public class nvp_UiManager_scr : MonoBehaviour {
 	private void OnMatchIsReady(object sender, object eventArgs){
 		_startGameButton.gameObject.SetActive(true);
 	}
+
+	public void OnStartMultiPlayerGame(){
+		nvp_EventManager_scr.INSTANCE.InvokeEvent(GameEvents.OnMultiplayerGameStarted, this, null);
+	}
+
+  private void OnStartMultiPlayerGame(object arg1, object arg2)
+  {
+    // unsubscribe from events
+		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMatchIdAccuired, OnMatchIdAccuired);
+		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMatchPresencesUpdated, OnMatchPresencesUpdated);
+		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMatchIsReady, OnMatchIsReady);
+		nvp_EventManager_scr.INSTANCE.UnsubscribeFromEvent(GameEvents.OnMultiplayerGameStarted, OnStartMultiPlayerGame);
+
+		Destroy(this.gameObject);
+  }
 }

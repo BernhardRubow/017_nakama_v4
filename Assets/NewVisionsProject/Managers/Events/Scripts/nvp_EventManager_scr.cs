@@ -7,12 +7,15 @@ namespace newvisionsproject.managers.events
 {
   public enum GameEvents
   {
-    OnMatchIdAccuired,
     OnCreateGameInitiated,
     OnJoinGameInitiated,
+    OnMatchIdAccuired,
     OnInitPlayerListReceived,
     OnMatchPresencesUpdated,
-    OnMatchIsReady
+    OnMatchIsReady,
+    OnGameMessageReceived,
+    OnNetworkManagerInitialised,
+    OnMultiplayerGameStarted
   }
 
   public class nvp_EventManager_scr : MonoBehaviour
